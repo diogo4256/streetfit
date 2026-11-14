@@ -36,12 +36,14 @@ strips = "The mapped parking strips are {sl} m ({side_l}) and {sr} m ({side_r}) 
 routes_scheduled = { one = "Route {routes} is scheduled along the street.", other = "Routes {routes} are scheduled along the street." }
 trips = { one = "{n} trip {heading}", other = "{n} trips {heading}" }
 routes = "{scheduled} On {day}: {trips_up} and {trips_down} (at most {max_up} and {max_down} per hour)."
+routes_one_way = "{scheduled} On {day}: {trips} and none {none} (at most {max} per hour)."
 vehicle_body = "Reference vehicle: {label}. Body width {w} m ({src})."
 vehicle_mirrors = "Reference vehicle: {label}. Width with mirrors taken as {w} m ({src})."
 budget = "With both strips occupied and parked vehicles inside them, two buses need at least {bb} m (bodies only, with no gap between them; {bbm} m with mirrors) against a median free width of {fmed} m: margin {mbb} m. A bus and a car need at least {bc} m: margin {mbc} m ({mbcm} m with the car's mirrors)."
 meetings = { one = "{n} meeting", other = "{n} meetings" }
 meetings_narrow = { one = "{n} falls within the sections with parking on both sides", other = "{n} fall within the sections with parking on both sides" }
 encounters = "The timetable implies {meetings} on {day} between buses in opposite directions on the street (constant-speed model at {speeds} km/h); {narrow}."
+encounters_one_way = "On {day} the timetable has buses in one direction only ({heading}), so it implies no meetings between buses in opposite directions on the street."
 runtimes = "Scheduled time from stop {a} to the next stop ({b}, {d} m in a straight line): median {m_all} s over all trips in the feed (at least {k_all} km/h) and {m_day} s on {day} (at least {k_day} km/h)."
 reports_attributed = { one = "{n} report in category '{flt}' was attributed to the street", other = "{n} reports in category '{flt}' were attributed to the street" }
 street_rank = { one = "rank {rank} of {total} street of at least {minlen} m in the surrounding area", other = "rank {rank} of {total} streets of at least {minlen} m in the surrounding area" }

@@ -36,12 +36,14 @@ strips = "O estacionamento cartografado ocupa {sl} m do lado {side_l} e {sr} m d
 routes_scheduled = { one = "Segundo o horário, a carreira {routes} passa nesta rua.", other = "Segundo o horário, as carreiras {routes} passam nesta rua." }
 trips = { one = "{n} viagem {heading}", other = "{n} viagens {heading}" }
 routes = "{scheduled} Em {day}: {trips_up} e {trips_down} (no máximo {max_up} e {max_down} por hora)."
+routes_one_way = "{scheduled} Em {day}: {trips} e nenhuma {none} (no máximo {max} por hora)."
 vehicle_body = "Veículo de referência: {label}. Carroçaria com {w} m de largura ({src})."
 vehicle_mirrors = "Veículo de referência: {label}. Largura com espelhos assumida em {w} m ({src})."
 budget = "Com o estacionamento ocupado dos dois lados e os carros dentro dos lugares, dois autocarros precisam de pelo menos {bb} m (só a carroçaria, sem espaço nenhum entre eles; {bbm} m com espelhos) e a largura livre mediana é de {fmed} m: folga de {mbb} m. Um autocarro e um ligeiro precisam de pelo menos {bc} m: folga de {mbc} m ({mbcm} m contando com os espelhos do ligeiro)."
 meetings = { one = "{n} encontro", other = "{n} encontros" }
 meetings_narrow = { one = "{n} acontece nos troços com estacionamento dos dois lados", other = "{n} acontecem nos troços com estacionamento dos dois lados" }
 encounters = "Segundo o horário, em {day} há {meetings} entre autocarros em sentidos opostos nesta rua (admitindo uma velocidade constante de {speeds} km/h); {narrow}."
+encounters_one_way = "Em {day}, o horário só tem autocarros num sentido ({heading}), por isso não prevê encontros entre autocarros em sentidos opostos nesta rua."
 runtimes = "Tempo previsto da paragem {a} à seguinte ({b}, a {d} m em linha reta): mediana de {m_all} s em todas as viagens do horário (pelo menos {k_all} km/h) e de {m_day} s em {day} (pelo menos {k_day} km/h)."
 reports_attributed = { one = "Foi atribuída à rua {n} ocorrência da categoria «{flt}»", other = "Foram atribuídas à rua {n} ocorrências da categoria «{flt}»" }
 street_rank = { one = "{rank}.ª de {total} rua com pelo menos {minlen} m na envolvente", other = "{rank}.ª de {total} ruas com pelo menos {minlen} m na envolvente" }

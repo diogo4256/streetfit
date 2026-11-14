@@ -16,6 +16,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - The READMEs say the package is on PyPI and that the cases and city profiles stay in the repository.
+- The READMEs open with what the Rua Ricardo Jorge example finds, each line with its grade, and say who the
+  tool is for and what it is not (a street design tool, a parking inventory, a bus-speed tracker).
 
 ### Fixed
 
@@ -80,6 +82,18 @@ and the project uses [Semantic Versioning](https://semver.org/).
   keeps its file, since the PNG compression differs from one platform to another. With the locked package
   versions, the Lisbon figures drawn on Linux and on macOS were identical pixel for pixel. The figures stage also removes the
   figures an earlier configuration made, which a full run used to do.
+- On a street where the timetable has buses in one direction only, the ledger names the direction without buses
+  ("72 trips S→N and none N→S") instead of printing 0 trips and at most 0 per hour, and says that buses in one
+  direction do not meet head-on instead of "0 meetings; 0 fall within the sections with parking on both sides".
+  The values in `findings.json` are unchanged.
+- Streets with the same rate of reports share a rank in the occurrences finding; the case street was ranked below
+  a street with the same rate whose name sorts first.
+- An area scan in which no bus runs along any street axis wrote tables without a header, which the ledger then
+  failed to read; they are written empty with their columns.
+- A case without a `question` no longer starts its `findings.md` with an empty quote.
+- `lint --lang` accepts only the languages it has rules for (`pt`, `en`), instead of silently checking only the
+  quotation marks of any other; `extract-standard --pages` reports page numbers it cannot read as a usage error,
+  not a traceback.
 
 ## [0.3.0] - 2026-10-24
 

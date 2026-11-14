@@ -415,16 +415,25 @@ def ledger_of(case):
     return {f["id"]: f for f in json.loads((case.results_dir / "findings.json").read_text(encoding="utf-8"))["findings"]}
 
 
-def test_buses_in_one_direction_only_never_meet_and_the_ledger_says_0(tmp_path):
+def test_buses_in_one_direction_only_never_meet_and_the_ledger_says_why(tmp_path):
     root = write_case(tmp_path / "one-direction")
     edit(root, 'routes = ["10", "20"]', 'routes = ["10"]')
     edit(root, '  { route = "20", direction_id = 1, stop_id = "S2", s_m = 200.0, heading = -1 },\n', "")
     case = Case.load(root)
     run(case, offline=True)
-    encounters = ledger_of(case)["encounters"]
+    findings = ledger_of(case)
+    # the direction without buses is named, not counted as 0 trips and at most 0 per hour
+    assert findings["transit"]["statement"] == (
+        "Route 10 is scheduled along the street. On 2026-10-27: 2 trips east and none west (at most 1 per hour)."
+    )
+    assert findings["transit"]["values"]["trips_down"] == 0
+    encounters = findings["encounters"]
     assert encounters["values"] == {"per_day": [0], "in_narrow_sections": [0]}
-    assert "implies 0 meetings on 2026-10-27" in encounters["statement"]
-    assert encounters["statement"].endswith("; 0 fall within the sections with parking on both sides.")
+    assert encounters["statement"] == (
+        "On 2026-10-27 the timetable has buses in one direction only (east), so it implies no meetings between buses "
+        "in opposite directions on the street."
+    )
+    assert encounters["method"] == encounters["caveat"] == ""  # no constant-speed model is needed to say so
 
 
 def test_a_traffic_station_without_an_answer_still_counts_as_checked(tmp_path):
@@ -563,3 +572,28 @@ def test_runtime_medians_are_printed_as_numbers_of_the_cases_language(tmp_path):
     findings = ledger_of(case)
     assert "mediana de 62,5 s em todas as viagens do horário" in findings["runtime_S1"]["statement"]
     assert "mediana de 60 s em todas as viagens do horário" in findings["runtime_S2"]["statement"]
+
+
+def test_streets_with_the_same_rate_of_reports_share_a_rank(case, results, tmp_path):
+    # Rua Larga given the case street's rate: sorted by name it comes first, but the case street is not second for that
+    shutil.copytree(results / "tables", tmp_path / "tables")
+    path = tmp_path / "tables" / "occurrences_by_street.csv"
+    by_street = pd.read_csv(path)
+    by_street.loc[by_street.street == "Rua Larga", "parking_per_100m"] = 2.5
+    by_street.sort_values(["parking_per_100m", "street"], ascending=[False, True]).to_csv(path, index=False)
+    run(Case.load(case.root, results_dir=tmp_path), stages=["ledger"], offline=True)
+    occ = next(f for f in json.loads((tmp_path / "findings.json").read_text(encoding="utf-8"))["findings"] if f["id"] == "occurrences")
+    assert pd.read_csv(path).street.tolist() == ["Rua Larga", "Rua do Teste"]
+    assert (occ["values"]["rank"], occ["values"]["of"]) == (1, 2)
+
+
+def test_a_case_without_a_question_has_no_empty_quote_in_its_ledger(tmp_path):
+    root = write_case(tmp_path / "no-question", optional=False)
+    text = (root / "case.toml").read_text(encoding="utf-8")
+    (root / "case.toml").write_text("\n".join(x for x in text.splitlines() if not x.startswith("question")) + "\n", encoding="utf-8")
+    case = Case.load(root)
+    assert case.config.case.question == ""
+    run(case, offline=True)
+    lines = (case.results_dir / "findings.md").read_text(encoding="utf-8").splitlines()
+    assert lines[:3] == [f"# {case.config.case.title}", "", lines[2]]
+    assert not any(line.startswith(">") for line in lines)

@@ -171,19 +171,35 @@ def build(r: Run) -> list[Finding]:
             "max_up_per_hour": int(tph[up].max()),
             "max_down_per_hour": int(tph[down].max()),
         }
+        scheduled = say("routes_scheduled", count=len(tr.routes), routes=", ".join(tr.routes))
+        # buses in one direction only: name the direction without trips instead of printing 0 trips and 0 per hour
+        one_way = (up, "up") if trips["trips_down"] == 0 else (down, "down") if trips["trips_up"] == 0 else None
+        if one_way is None:
+            routes_statement = say(
+                "routes",
+                scheduled=scheduled,
+                day=tr.service_date,
+                trips_up=say("trips", count=trips["trips_up"], n=trips["trips_up"], heading=up),
+                trips_down=say("trips", count=trips["trips_down"], n=trips["trips_down"], heading=down),
+                max_up=trips["max_up_per_hour"],
+                max_down=trips["max_down_per_hour"],
+            )
+        else:
+            heading, key = one_way
+            count = trips[f"trips_{key}"]
+            routes_statement = say(
+                "routes_one_way",
+                scheduled=scheduled,
+                day=tr.service_date,
+                trips=say("trips", count=count, n=count, heading=heading),
+                none=down if key == "up" else up,
+                max=trips[f"max_{key}_per_hour"],
+            )
         F.append(
             Finding(
                 id="transit",
                 grade="M",
-                statement=say(
-                    "routes",
-                    scheduled=say("routes_scheduled", count=len(tr.routes), routes=", ".join(tr.routes)),
-                    day=tr.service_date,
-                    trips_up=say("trips", count=trips["trips_up"], n=trips["trips_up"], heading=up),
-                    trips_down=say("trips", count=trips["trips_down"], n=trips["trips_down"], heading=down),
-                    max_up=trips["max_up_per_hour"],
-                    max_down=trips["max_down_per_hour"],
-                ),
+                statement=routes_statement,
                 values=trips | {"service_date": str(tr.service_date)},
                 sources=[tr.source],
                 method=method("transit"),
@@ -367,31 +383,39 @@ def build(r: Run) -> list[Finding]:
             if len(schedule)
             else ""
         )
+        if one_way is None:
+            statement = say(
+                "encounters",
+                day=tr.service_date,
+                meetings=say("meetings", count=range_count(counts), n="–".join(map(str, counts))),
+                speeds="/".join(f"{v:g}" for v in assumed.speed_kmh),
+                narrow=say("meetings_narrow", count=range_count(in_narrow), n="–".join(map(str, in_narrow))),
+            )
+            notes = sentences(caveat("encounters_model"), check)
+        else:  # no model is needed to say that buses in one direction do not meet head-on, at any speed
+            statement, notes = say("encounters_one_way", day=tr.service_date, heading=one_way[0]), ""
         F.append(
             Finding(
                 id="encounters",
                 grade="I",
-                statement=say(
-                    "encounters",
-                    day=tr.service_date,
-                    meetings=say("meetings", count=range_count(counts), n="–".join(map(str, counts))),
-                    speeds="/".join(f"{v:g}" for v in assumed.speed_kmh),
-                    narrow=say("meetings_narrow", count=range_count(in_narrow), n="–".join(map(str, in_narrow))),
-                ),
+                statement=statement,
                 values={"per_day": counts, "in_narrow_sections": in_narrow},
                 sources=["transit", "free_width"],
-                method=method("encounters"),
-                caveat=sentences(caveat("encounters_model"), check),
+                method=method("encounters") if one_way is None else "",
+                caveat=notes,
             )
         )
 
     o = cfg.occurrences
     if o:
         fname, frx = next(iter(o.filters.items()))
-        occ = r.table("occurrences_by_street")  # sorted by rate, so a street's rank is its row
+        occ = r.table("occurrences_by_street")
         me = occ[occ.street == cfg.street.name]
         if len(me):
-            row, rank = me.iloc[0], int(me.index[0]) + 1
+            # streets with the same rate share a rank: one more than the streets with a higher rate, whatever their names
+            rate = f"{fname}_per_100m"
+            row = me.iloc[0]
+            rank = int((occ[rate] > row[rate]).sum()) + 1
             files = r.table("occurrences_files")
             dated = files[files.first_date.notna() & (files.first_date != "")]  # a file without a located record has no dates
             F.append(
@@ -493,7 +517,7 @@ def markdown(case: Case, findings: list[Finding], lock: Lock) -> str:
         return t(f"report.{key}", case.lang, **kw)
 
     info = case.config.case
-    head = ["# " + info.title, "", f"> {info.question}", "", say("intro"), ""]
+    head = ["# " + info.title, "", *([f"> {info.question}", ""] if info.question else []), say("intro"), ""]
     body = []
     for f in findings:
         line = f"- **[{f.grade}]** {f.statement}"
